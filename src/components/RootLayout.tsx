@@ -9,6 +9,7 @@ import { useExitLayer } from "@/hooks/useExitLayer";
 import { App as CapacitorApp } from "@capacitor/app";
 import { useEffect, useCallback, useRef, lazy, Suspense } from "react";
 import { IS_NATIVE } from "@/lib/api/config";
+import { PrivacyConsentDialog } from "@/components/PrivacyConsentDialog";
 
 const FullScreenPlayer = lazy(() =>
   import("@/components/FullScreenPlayer").then((m) => ({
@@ -129,6 +130,8 @@ export function RootLayout() {
           onClose={() => setStoreFullScreen(false)}
         />
       </Suspense>
+
+      <PrivacyConsentDialog />
     </>
   );
 }

@@ -15,7 +15,6 @@ export interface ScanResult {
   success: boolean;
   files: LocalMusicFile[];
   error?: string;
-  needManageStorage?: boolean;
 }
 
 export interface LocalFileUrlResult {
@@ -37,19 +36,8 @@ export interface EmbeddedLyricsResult {
   error?: string;
 }
 
-export interface HasPermissionResult {
-  hasPermission: boolean;
-}
-
 export interface DeleteResult {
   success: boolean;
-  error?: string;
-}
-
-export interface PickDirectoryResult {
-  success: boolean;
-  path?: string;
-  uri?: string;
   error?: string;
 }
 
@@ -61,20 +49,8 @@ export interface DarkModeChangeEvent {
   isDarkMode: boolean;
 }
 
-export interface ExcludedFoldersResult {
-  success: boolean;
-  folders: string[];
-}
-
-export interface ExcludedFolderMutationResult {
-  success: boolean;
-  folder?: string;
-  error?: string;
-}
-
 export interface LocalMusicPlugin {
   scanLocalMusic(): Promise<ScanResult>;
-  scanAllStorage(): Promise<ScanResult>;
   getLocalFileUrl(options: { localPath: string }): Promise<LocalFileUrlResult>;
   getEmbeddedCover(options: {
     localPath: string;
@@ -82,19 +58,8 @@ export interface LocalMusicPlugin {
   getEmbeddedLyrics(options: {
     localPath: string;
   }): Promise<EmbeddedLyricsResult>;
-  openManageStorageSettings(): Promise<void>;
-  hasAllStoragePermission(): Promise<HasPermissionResult>;
   deleteLocalMusic(options: { localPath: string }): Promise<DeleteResult>;
-  pickDownloadDirectory(): Promise<PickDirectoryResult>;
   getSystemDarkMode(): Promise<SystemDarkModeResult>;
-  getExcludedFolders(): Promise<ExcludedFoldersResult>;
-  addExcludedFolder(options: {
-    folder: string;
-  }): Promise<ExcludedFolderMutationResult>;
-  removeExcludedFolder(options: {
-    folder: string;
-  }): Promise<ExcludedFolderMutationResult>;
-  pickExcludedDirectory(): Promise<PickDirectoryResult>;
   addListener(
     eventName: "darkModeChange",
     listenerFunc: (event: DarkModeChangeEvent) => void
@@ -102,5 +67,3 @@ export interface LocalMusicPlugin {
 }
 
 const LocalMusicPlugin = registerPlugin<LocalMusicPlugin>("LocalMusicPlugin");
-
-export { LocalMusicPlugin };

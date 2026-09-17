@@ -7,10 +7,7 @@ import {
   HardDrive,
   HardDriveDownload,
   WifiOff,
-  FolderX,
-  Plus,
   Trash2,
-  ChevronDown,
 } from "lucide-react";
 import {
   Drawer,
@@ -39,7 +36,6 @@ import { useMusicStore } from "@/store/music-store";
 import { useShallow } from "zustand/react/shallow";
 import { getPlayAllStartIndex } from "@/hooks/usePlayHelper";
 import { useLocalMusicStore } from "@/store/local-music-store";
-import { LocalMusicPermissionDialog } from "./LocalMusicPermissionDialog";
 import { logger } from "@/lib/logger";
 import { useNavigate } from "react-router-dom";
 
@@ -80,7 +76,6 @@ export function LocalMusicPage({
   /* --- 状态 --- */
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showPermissionDialog, setShowPermissionDialog] = useState(false);
 
   // 删除状态（统一为数组，单删/批删复用）
   const [deleteTargets, setDeleteTargets] = useState<MusicTrack[]>([]);
@@ -90,10 +85,6 @@ export function LocalMusicPage({
 
   // 扫描与排除目录状态
   const [scanDrawerOpen, setScanDrawerOpen] = useState(false);
-  const [excludedFolders, setExcludedFolders] = useState<string[]>([]);
-  const [excludedExpanded, setExcludedExpanded] = useState(false);
-  const [pickingFolder, setPickingFolder] = useState(false);
-  const [excludedLoading, setExcludedLoading] = useState(false);
 
   /* --- Store --- */
   const { queue, currentIndex, skipToNext, isShuffle } = useMusicStore(
@@ -109,30 +100,19 @@ export function LocalMusicPage({
 
   /* --- 扫描逻辑 --- */
   const performScan = useCallback(
-    async (type: "quick" | "full") => {
+    async () => {
       setIsLoading(true);
       setError(null);
-      setScanning(true, type);
+      setScanning(true, "quick");
 
       try {
-        const result =
-          type === "quick"
-            ? await LocalMusicPlugin.scanLocalMusic()
-            : await LocalMusicPlugin.scanAllStorage();
+        const result = await LocalMusicPlugin.scanLocalMusic();
 
         if (result.success) {
-          const merged =
-            type === "full"
-              ? mergeLocalMusicFiles(files, result.files)
-              : result.files;
-          setFiles(merged);
-          return merged.length;
+          setFiles(result.files);
+          return result.files.length;
         }
 
-        if (result.needManageStorage) {
-          setShowPermissionDialog(true);
-          throw new Error(result.error || "需要授予存储权限");
-        }
         throw new Error(result.error || "扫描失败");
       } catch (err: any) {
         const message = err.message || String(err);
@@ -159,7 +139,7 @@ export function LocalMusicPage({
   const handleScan = (type: "quick" | "full") => {
     if (isLoading) return;
     toast.promise(performScan(type), {
-      loading: type === "full" ? "全盘扫描中..." : "正在扫描本地音乐...",
+      loading: "正在扫描本地音乐...",
       success: (count) =>
         count === 0 ? "未找到本地音乐" : `找到 ${count} 首本地音乐`,
       error: (err) => err.message,
@@ -208,44 +188,6 @@ export function LocalMusicPage({
     });
     await promise;
   };
-
-  /* --- 排除目录逻辑 --- */
-  const loadExcludedFolders = useCallback(async () => {
-    setExcludedLoading(true);
-    try {
-      const result = await LocalMusicPlugin.getExcludedFolders();
-      if (result.success) setExcludedFolders(result.folders);
-    } catch (err) {
-      logger.warn("LocalMusicPage", "加载排除目录失败", { err });
-    } finally {
-      setExcludedLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (scanDrawerOpen) loadExcludedFolders();
-  }, [scanDrawerOpen, loadExcludedFolders]);
-
-  const handlePickExcluded = useCallback(async () => {
-    setPickingFolder(true);
-    try {
-      const result = await LocalMusicPlugin.pickExcludedDirectory();
-      if (result.success && result.path) await loadExcludedFolders();
-    } catch (err) {
-      logger.warn("LocalMusicPage", "选择排除目录失败", { err });
-    } finally {
-      setPickingFolder(false);
-    }
-  }, [loadExcludedFolders]);
-
-  const handleRemoveExcluded = useCallback(async (folder: string) => {
-    try {
-      await LocalMusicPlugin.removeExcludedFolder({ folder });
-      setExcludedFolders((prev) => prev.filter((f) => f !== folder));
-    } catch (err) {
-      logger.warn("LocalMusicPage", "移除排除目录失败", { err, folder });
-    }
-  }, []);
 
   /* --- 数据转换与播放 --- */
   const tracks = useMemo(
@@ -334,11 +276,6 @@ export function LocalMusicPage({
       )}
 
       {/* 弹窗及抽屉 */}
-      <LocalMusicPermissionDialog
-        open={showPermissionDialog}
-        onOpenChange={setShowPermissionDialog}
-      />
-
       <Dialog
         open={deleteTargets.length > 0}
         onOpenChange={(open) => !open && resetDeleteState()}
@@ -387,21 +324,11 @@ export function LocalMusicPage({
             </DrawerTitle>
           </DrawerHeader>
           <div className="px-5 py-4 space-y-4">
-            <ExcludedFoldersSection
-              folders={excludedFolders}
-              loading={excludedLoading}
-              picking={pickingFolder}
-              isExpanded={excludedExpanded}
-              onToggleExpand={() => setExcludedExpanded((v) => !v)}
-              onPick={handlePickExcluded}
-              onRemove={handleRemoveExcluded}
-            />
             <button
               type="button"
-              data-testid="confirm-full-scan"
               onClick={() => {
                 setScanDrawerOpen(false);
-                handleScan("full");
+                handleScan("quick");
               }}
               disabled={isLoading}
               className="w-full h-10 text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 rounded-md transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
@@ -414,108 +341,5 @@ export function LocalMusicPage({
         </DrawerContent>
       </Drawer>
     </PageLayout>
-  );
-}
-
-/* --- 排除目录子组件保持原样但结构紧凑 --- */
-interface ExcludedFoldersSectionProps {
-  folders: string[];
-  loading: boolean;
-  picking: boolean;
-  isExpanded: boolean;
-  onToggleExpand: () => void;
-  onPick: () => void;
-  onRemove: (folder: string) => void;
-}
-
-function ExcludedFoldersSection({
-  folders,
-  loading,
-  picking,
-  isExpanded,
-  onToggleExpand,
-  onPick,
-  onRemove,
-}: ExcludedFoldersSectionProps) {
-  const count = folders.length;
-  return (
-    <div className="rounded-lg border border-border/50 bg-card/40">
-      <button
-        type="button"
-        onClick={onToggleExpand}
-        className="w-full flex items-center gap-2 px-3 py-2.5 text-left"
-      >
-        <div className="h-7 w-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0 flex-[0_0_28px] min-w-7 min-h-7">
-          <div className="h-3.5 w-3.5 shrink-0 flex-[0_0_14px] min-w-3.5 min-h-3.5">
-            <FolderX className="h-full w-full text-primary" />
-          </div>
-        </div>
-        <div className="flex flex-col min-w-0 flex-1">
-          <span className="text-sm text-foreground">排除目录</span>
-          <span className="text-xs text-muted-foreground truncate">
-            {count > 0 ? `已排除 ${count} 个目录` : "使用默认通话录音黑名单"}
-          </span>
-        </div>
-        <ChevronDown
-          className={cn(
-            "h-4 w-4 text-muted-foreground transition-transform duration-200",
-            isExpanded && "rotate-180"
-          )}
-        />
-      </button>
-
-      <div
-        className={cn(
-          "grid transition-all duration-200 ease-in-out",
-          isExpanded
-            ? "grid-rows-[1fr] opacity-100"
-            : "grid-rows-[0fr] opacity-0"
-        )}
-      >
-        <div className="overflow-hidden">
-          <div className="px-3 pb-3 pt-1 space-y-3 border-t border-border/40">
-            <button
-              type="button"
-              data-testid="excluded-folder-pick"
-              onClick={onPick}
-              disabled={picking || loading}
-              className="w-full h-8 text-xs bg-primary/10 hover:bg-primary/20 text-primary rounded-md transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              {picking ? "选择中..." : "选择目录"}
-            </button>
-            <div
-              data-testid="excluded-folder-list"
-              className="space-y-1.5 max-h-56 overflow-y-auto"
-            >
-              {count === 0 && !loading && (
-                <div className="text-xs text-muted-foreground text-center py-3">
-                  暂无自定义排除目录
-                </div>
-              )}
-              {folders.map((folder) => (
-                <div
-                  key={folder}
-                  className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-md bg-muted/40 border border-border/40"
-                >
-                  <span className="text-xs truncate flex-1" title={folder}>
-                    {folder}
-                  </span>
-                  <button
-                    type="button"
-                    data-testid="excluded-folder-remove"
-                    onClick={() => onRemove(folder)}
-                    className="p-1 text-muted-foreground hover:text-foreground shrink-0"
-                    title="移除"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
   );
 }
