@@ -17,6 +17,10 @@ import {
 } from "@/lib/netease/netease-api";
 import { forceHttps } from "@otter-music/shared";
 import { logger } from "@/lib/logger";
+import { IS_NATIVE } from "@/lib/api/config";
+import { requestMusicApiJSON } from "../utils";
+import { normalizeTrack } from "../utils";
+import type { RawApiTrack } from "../types";
 
 export class NeteaseApiProvider implements IMusicProvider {
   source = "_netease";
@@ -26,10 +30,22 @@ export class NeteaseApiProvider implements IMusicProvider {
     query: string,
     page: number,
     count: number,
-    _signal?: AbortSignal,
+    signal?: AbortSignal,
     _intent?: SearchIntent
   ): Promise<SearchPageResult<MusicTrack>> {
-    // Note: signal is not currently supported by netease-api search, but that's fine
+    // Web 生产环境：走 Cloudflare Functions 后端适配器（source=_netease 触发 handleNeteaseRequest）
+    // 原生环境：直连网易云 API（有 CapacitorHttp 无 CORS 问题）
+    // 开发环境：走 Vite 代理 /api/netease
+    if (!IS_NATIVE && import.meta.env.PROD) {
+      const json = await requestMusicApiJSON<RawApiTrack[]>(
+        { types: "search", name: query, count, pages: page },
+        "_netease",
+        signal
+      );
+      const items = json.map((t) => normalizeTrack(t, "_netease"));
+      return { items, hasMore: items.length === count };
+    }
+
     const res = await neteaseSearch(query, 1, page, count);
     const songs = res.data.result.songs || [];
     const items = songs.map((s) => convertSongToMusicTrack(s));
@@ -43,6 +59,13 @@ export class NeteaseApiProvider implements IMusicProvider {
 
   async getUrl(track: MusicTrack, br: number = 192): Promise<string | null> {
     try {
+      if (!IS_NATIVE && import.meta.env.PROD) {
+        const json = await requestMusicApiJSON<{ url: string; br: number; size: number }>(
+          { types: "url", id: track.id, br },
+          "_netease"
+        );
+        return forceHttps(json.url) || null;
+      }
       const res = await getSongUrl(track.id, br * 1000);
       return forceHttps(res.data?.data?.[0]?.url) || null;
     } catch (e) {
@@ -53,6 +76,14 @@ export class NeteaseApiProvider implements IMusicProvider {
 
   async getPic(track: MusicTrack, size: number = 800): Promise<string | null> {
     try {
+      if (!IS_NATIVE && import.meta.env.PROD) {
+        const json = await requestMusicApiJSON<{ url: string }>(
+          { types: "pic", id: track.id },
+          "_netease"
+        );
+        const url = json.url;
+        return url ? `${url}?param=${size}y${size}` : null;
+      }
       const song = await getSongDetail(track.id);
       const url = song?.al?.picUrl;
       return url ? `${url}?param=${size}y${size}` : null;
@@ -64,6 +95,13 @@ export class NeteaseApiProvider implements IMusicProvider {
 
   async getLyric(track: MusicTrack): Promise<SongLyric | null> {
     try {
+      if (!IS_NATIVE && import.meta.env.PROD) {
+        const json = await requestMusicApiJSON<{ lyric: string; tlyric: string }>(
+          { types: "lyric", id: track.id },
+          "_netease"
+        );
+        return { lyric: json.lyric || "", tlyric: json.tlyric || "" };
+      }
       const res = await getLyric(track.id);
       if (!res || !res.data) return { lyric: "", tlyric: "" };
       return {
