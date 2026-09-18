@@ -100,10 +100,10 @@ export function LocalMusicPage({
 
   /* --- 扫描逻辑 --- */
   const performScan = useCallback(
-    async () => {
+    async (type: "quick" | "full" = "quick") => {
       setIsLoading(true);
       setError(null);
-      setScanning(true, "quick");
+      setScanning(true, type);
 
       try {
         const result = await LocalMusicPlugin.scanLocalMusic();

@@ -41,6 +41,29 @@ export interface DeleteResult {
   error?: string;
 }
 
+export interface ExcludedFoldersResult {
+  success: boolean;
+  folders: string[];
+  error?: string;
+}
+
+export interface PickDirectoryResult {
+  success: boolean;
+  path?: string;
+  uri?: string;
+  error?: string;
+}
+
+export interface OpenSettingsResult {
+  success: boolean;
+}
+
+export interface PickDownloadDirectoryResult {
+  success: boolean;
+  path?: string;
+  error?: string;
+}
+
 export interface SystemDarkModeResult {
   isDarkMode: boolean;
 }
@@ -59,6 +82,12 @@ export interface LocalMusicPlugin {
     localPath: string;
   }): Promise<EmbeddedLyricsResult>;
   deleteLocalMusic(options: { localPath: string }): Promise<DeleteResult>;
+  scanAllStorage(): Promise<ScanResult>;
+  getExcludedFolders(): Promise<ExcludedFoldersResult>;
+  pickExcludedDirectory(): Promise<PickDirectoryResult>;
+  removeExcludedFolder(options: { folder: string }): Promise<DeleteResult>;
+  openManageStorageSettings(): Promise<OpenSettingsResult>;
+  pickDownloadDirectory(): Promise<PickDownloadDirectoryResult>;
   getSystemDarkMode(): Promise<SystemDarkModeResult>;
   addListener(
     eventName: "darkModeChange",
@@ -66,4 +95,4 @@ export interface LocalMusicPlugin {
   ): Promise<PluginListenerHandle>;
 }
 
-const LocalMusicPlugin = registerPlugin<LocalMusicPlugin>("LocalMusicPlugin");
+export const LocalMusicPlugin = registerPlugin<LocalMusicPlugin>("LocalMusicPlugin");

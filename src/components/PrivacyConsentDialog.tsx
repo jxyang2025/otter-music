@@ -46,7 +46,7 @@ export function PrivacyConsentDialog() {
 
   return (
     <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent className="max-w-sm" hideCloseButton>
+      <DialogContent className="max-w-sm" showCloseButton={false}>
         <DialogHeader>
           <DialogTitle className="text-center">隐私政策</DialogTitle>
           <DialogDescription className="text-center pt-2">
