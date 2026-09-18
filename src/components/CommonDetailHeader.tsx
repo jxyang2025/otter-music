@@ -4,8 +4,10 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Play, Search } from "lucide-react";
+import { Play, Search, Repeat, Repeat1, Shuffle } from "lucide-react";
 import type { MusicTrack } from "@/types/music";
+import { useMusicStore } from "@/store/music-store";
+import { useShallow } from "zustand/react/shallow";
 
 export interface CommonDetailHeaderProps {
   title: string;
@@ -20,6 +22,8 @@ export interface CommonDetailHeaderProps {
   tracks?: MusicTrack[];
   searchQuery?: string;
   onSearchChange?: (value: string) => void;
+  /** 是否显示播放模式按钮，默认 true */
+  showModeButton?: boolean;
 }
 
 export const CommonDetailHeader = memo(function CommonDetailHeader({
@@ -35,11 +39,32 @@ export const CommonDetailHeader = memo(function CommonDetailHeader({
   tracks,
   searchQuery = "",
   onSearchChange,
+  showModeButton = true,
 }: CommonDetailHeaderProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
+  const { isRepeat, toggleRepeat, toggleShuffle } = useMusicStore(
+    useShallow((s) => ({
+      isRepeat: s.isRepeat,
+      toggleRepeat: s.toggleRepeat,
+      toggleShuffle: s.toggleShuffle,
+    }))
+  );
+
   const hasDesc = !!description;
   const hasTracks = !!(onPlayTrack && tracks && tracks.length > 0);
+
+  const handleModeCycle = () => {
+    // 循环切换：列表循环 → 单曲循环 → 随机播放 → 列表循环
+    if (!isShuffle && !isRepeat) {
+      toggleRepeat();
+    } else if (isRepeat) {
+      toggleRepeat();
+      toggleShuffle();
+    } else {
+      toggleShuffle();
+    }
+  };
 
   const handlePlay = useCallback(() => {
     if (!hasTracks) return;
@@ -55,9 +80,7 @@ export const CommonDetailHeader = memo(function CommonDetailHeader({
     btn: hasDesc
       ? "rounded-full px-3 h-9 col-span-1 min-w-0"
       : "rounded-full px-3 h-8 md:h-9 gap-1.5 min-w-0 shrink",
-    searchWrapper: hasDesc
-      ? "relative col-span-2"
-      : "relative flex-1 min-w-0",
+    searchWrapper: hasDesc ? "relative col-span-2" : "relative flex-1 min-w-0",
     searchIcon: hasDesc
       ? "absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60"
       : "absolute left-2 top-2.5 h-3 w-3 text-muted-foreground md:h-4 md:w-4 md:top-2",
@@ -72,6 +95,39 @@ export const CommonDetailHeader = memo(function CommonDetailHeader({
         <Play className="h-3 w-3 fill-current" />
         {hasDesc && <span>播放全部</span>}
       </Button>
+
+      {showModeButton && (
+        <Button
+          size="sm"
+          variant="ghost"
+          className={cn(
+            styles.btn,
+            "text-muted-foreground hover:text-foreground",
+            (isShuffle || isRepeat) && "text-primary"
+          )}
+          onClick={handleModeCycle}
+          title={
+            isRepeat
+              ? "单曲循环，点击切换为随机播放"
+              : isShuffle
+                ? "随机播放，点击恢复列表循环"
+                : "列表循环，点击切换为单曲循环"
+          }
+        >
+          {isRepeat ? (
+            <Repeat1 className="h-3 w-3" />
+          ) : isShuffle ? (
+            <Shuffle className="h-3 w-3" />
+          ) : (
+            <Repeat className="h-3 w-3" />
+          )}
+          {hasDesc && (
+            <span className="ml-1 text-[11px]">
+              {isRepeat ? "单曲" : isShuffle ? "随机" : "列表"}
+            </span>
+          )}
+        </Button>
+      )}
 
       {onSearchChange && (
         <div className={styles.searchWrapper}>

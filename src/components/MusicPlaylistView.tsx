@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
-import { Play, Search } from "lucide-react";
+import { Play, Search, Repeat, Repeat1, Shuffle } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { filterTracks } from "@/lib/utils/filter-tracks";
 import { MusicTrackList } from "./MusicTrackList";
 import { Input } from "@/components/ui/input";
@@ -243,6 +244,7 @@ export function MusicPlaylistView({
             >
               <Play className="h-3 w-3 fill-current" />
             </Button>
+            <PlaylistModeButton />
             {action}
             {playlistId && (
               <PlaylistOperations
@@ -356,5 +358,55 @@ export function MusicPlaylistView({
         onConfirm={handleAddByUrl}
       />
     </div>
+  );
+}
+
+/** 歌单页头部的播放模式切换按钮：列表循环 → 单曲循环 → 随机播放 */
+function PlaylistModeButton() {
+  const { isRepeat, isShuffle, toggleRepeat, toggleShuffle } = useMusicStore(
+    useShallow((s) => ({
+      isRepeat: s.isRepeat,
+      isShuffle: s.isShuffle,
+      toggleRepeat: s.toggleRepeat,
+      toggleShuffle: s.toggleShuffle,
+    }))
+  );
+
+  const handleModeCycle = () => {
+    if (!isShuffle && !isRepeat) {
+      toggleRepeat();
+    } else if (isRepeat) {
+      toggleRepeat();
+      toggleShuffle();
+    } else {
+      toggleShuffle();
+    }
+  };
+
+  return (
+    <Button
+      size="sm"
+      variant="ghost"
+      className={cn(
+        "rounded-full px-3 h-8 text-muted-foreground hover:text-foreground",
+        (isShuffle || isRepeat) && "text-primary"
+      )}
+      onClick={handleModeCycle}
+      title={
+        isRepeat
+          ? "单曲循环，点击切换为随机播放"
+          : isShuffle
+            ? "随机播放，点击恢复列表循环"
+            : "列表循环，点击切换为单曲循环"
+      }
+    >
+      {isRepeat ? (
+        <Repeat1 className="h-3 w-3" />
+      ) : isShuffle ? (
+        <Shuffle className="h-3 w-3" />
+      ) : (
+        <Repeat className="h-3 w-3" />
+      )}
+    </Button>
   );
 }
