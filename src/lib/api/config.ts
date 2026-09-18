@@ -76,6 +76,12 @@ const setStorage = (key: string, val: unknown) =>
  */
 function getDefaultMusicApiUrls(): string[] {
   const proxiedApiUrl = `${getApiUrl()}/music-api`;
+  if (!IS_NATIVE) {
+    // Web 环境有 CORS 限制：直连 GD Studio API 不返回 CORS 头
+    // 优先走自建代理（Cloudflare Pages Functions），直连作为备用
+    return [proxiedApiUrl, DEFAULT_MUSIC_API_URL];
+  }
+  // 原生 App 无 CORS 限制，直连优先（更快）
   return [DEFAULT_MUSIC_API_URL, proxiedApiUrl];
 }
 
