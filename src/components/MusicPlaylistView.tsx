@@ -222,7 +222,11 @@ export function MusicPlaylistView({
             {title}
           </h2>
           <div className="text-xs text-muted-foreground flex items-center gap-2">
-            <span>{tracks.length} 首歌曲</span>
+            <span>
+              {searchQuery && filteredTracks.length !== tracks.length
+                ? `${filteredTracks.length}/${tracks.length} 首歌曲`
+                : `${tracks.length} 首歌曲`}
+            </span>
             {createdAt && (
               <>
                 <span>•</span>

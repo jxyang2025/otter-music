@@ -1,6 +1,12 @@
 "use client";
 
-import { ListVideo, Pause, Play } from "lucide-react";
+import {
+  ListVideo,
+  Pause,
+  Play,
+  SkipBack,
+  SkipForward,
+} from "lucide-react";
 import { useMusicStore } from "@/store/music-store";
 import { useShallow } from "zustand/react/shallow";
 import { PlayerQueueDrawer } from "./PlayerQueueDrawer";
@@ -33,6 +39,7 @@ export function MusicNowPlayingBar({
     reshuffle,
     removeFromQueue,
     playTrackAsNext,
+    skipToNext,
   } = useMusicStore(
     useShallow((state) => ({
       isPlaying: state.isPlaying,
@@ -48,6 +55,7 @@ export function MusicNowPlayingBar({
       reshuffle: state.reshuffle,
       removeFromQueue: state.removeFromQueue,
       playTrackAsNext: state.playTrackAsNext,
+      skipToNext: state.skipToNext,
     }))
   );
 
@@ -72,6 +80,26 @@ export function MusicNowPlayingBar({
       removeFromQueue(track.id);
     },
     [removeFromQueue]
+  );
+
+  const handlePrev = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      const len = queue.length;
+      if (len === 0) return;
+      setCurrentIndexAndPlay((currentIndex - 1 + len) % len);
+    },
+    [queue.length, currentIndex, setCurrentIndexAndPlay]
+  );
+
+  const handleNext = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      const len = queue.length;
+      if (len === 0) return;
+      setCurrentIndexAndPlay((currentIndex + 1) % len);
+    },
+    [queue.length, currentIndex, setCurrentIndexAndPlay]
   );
 
   const progress = duration > 0 ? (currentAudioTime / duration) * 100 : 0;
@@ -133,10 +161,29 @@ export function MusicNowPlayingBar({
             </span>
           </p>
 
+          {/* 上一首按钮 - 非Tab模式或队列长度>1时显示 */}
+          {queue.length > 1 && (
+            <button
+              className={cn(
+                "text-muted-foreground hover:text-foreground transition-all shrink-0 focus:outline-none",
+                isTab ? "p-1" : "p-1.5"
+              )}
+              onClick={handlePrev}
+              aria-label="上一首"
+            >
+              <SkipBack
+                className={cn(
+                  "fill-current transition-all duration-300",
+                  isTab ? "h-3.5 w-3.5" : "h-4 w-4"
+                )}
+              />
+            </button>
+          )}
+
           {/* 圆环播放按钮 */}
           <div
             className={cn(
-              "relative shrink-0 transition-all duration-300 ml-2",
+              "relative shrink-0 transition-all duration-300 ml-1",
               isTab ? "w-9 h-9" : "w-11 h-11"
             )}
           >
@@ -194,6 +241,25 @@ export function MusicNowPlayingBar({
               )}
             </button>
           </div>
+
+          {/* 下一首按钮 - 非Tab模式或队列长度>1时显示 */}
+          {queue.length > 1 && (
+            <button
+              className={cn(
+                "text-muted-foreground hover:text-foreground transition-all shrink-0 focus:outline-none",
+                isTab ? "p-1 ml-1" : "p-1.5 ml-1"
+              )}
+              onClick={handleNext}
+              aria-label="下一首"
+            >
+              <SkipForward
+                className={cn(
+                  "fill-current transition-all duration-300",
+                  isTab ? "h-3.5 w-3.5" : "h-4 w-4"
+                )}
+              />
+            </button>
+          )}
         </div>
 
         {/* 与可点击区域为兄弟节点，ghost click 不会冒泡 */}
