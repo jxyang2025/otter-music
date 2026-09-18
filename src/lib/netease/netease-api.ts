@@ -40,7 +40,7 @@ import {
 } from "./netease-normalize";
 import { MusicTrack } from "@/types/music";
 import { cachedFetch } from "@/lib/utils/cache";
-import { getApiUrl, IS_NATIVE } from "@/lib/api/config";
+import { getApiUrl, getProxyUrl, IS_NATIVE } from "@/lib/api/config";
 import { CapacitorHttp } from "@capacitor/core";
 import { useNeteaseStore } from "@/store/netease-store";
 import { logger } from "@/lib/logger";
@@ -171,9 +171,13 @@ async function crossFetch(
     };
   }
 
+  // Web 生产环境：通过自建代理转发，绕过 CORS 限制
+  // 开发环境：BASE_URL 已是 /api/netease（Vite 代理）
+  const finalUrl = import.meta.env.PROD && !IS_NATIVE ? getProxyUrl(url) : url;
+
   const controller = new AbortController();
   const timer = window.setTimeout(() => controller.abort(), NETWORK_TIMEOUT_MS);
-  const response = await fetch(url, {
+  const response = await fetch(finalUrl, {
     ...options,
     signal: controller.signal,
   }).finally(() => window.clearTimeout(timer));

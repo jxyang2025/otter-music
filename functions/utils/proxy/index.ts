@@ -1,5 +1,5 @@
 // functions/utils/proxy/index.ts
-import { safeFetch } from "./fetch";
+import { safeFetch, safePost } from "./fetch";
 
 export * from "./headers";
 
@@ -10,12 +10,27 @@ export * from "./headers";
  */
 export async function proxyGet(
   targetUrl: string,
-  extraHeaders?: Record<string, string>,
+  extraHeaders?: Record<string, string>
 ): Promise<Response> {
   const response = await safeFetch(targetUrl, {
     ...extraHeaders,
   });
 
+  return response;
+}
+
+/**
+ * 统一代理 POST 请求入口
+ * @param targetUrl 目标 URL
+ * @param extraHeaders 额外的自定义请求头
+ * @param body POST body
+ */
+export async function proxyPost(
+  targetUrl: string,
+  extraHeaders: Record<string, string>,
+  body: string
+): Promise<Response> {
+  const response = await safePost(targetUrl, extraHeaders, body);
   return response;
 }
 

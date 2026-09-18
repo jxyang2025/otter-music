@@ -6,10 +6,12 @@ import { filterRequestHeaders } from "./headers";
 export async function safeFetch(
   url: string,
   headers: Record<string, string>,
-  timeout = 60000,
+  timeout = 60000
 ): Promise<Response> {
   if (!isValidUrl(url)) {
-    throw new Error("Invalid or blocked URL. Private and local addresses are not allowed.");
+    throw new Error(
+      "Invalid or blocked URL. Private and local addresses are not allowed."
+    );
   }
 
   const controller = new AbortController();
@@ -19,6 +21,39 @@ export async function safeFetch(
     const fetchOptions: RequestInit = {
       method: "GET",
       headers: filterRequestHeaders(new Headers(headers)),
+      redirect: "follow",
+      signal: controller.signal,
+    };
+
+    return await fetch(url, fetchOptions);
+  } finally {
+    clearTimeout(id);
+  }
+}
+
+/**
+ * 安全的 POST fetch，用于代理 POST 请求
+ */
+export async function safePost(
+  url: string,
+  headers: Record<string, string>,
+  body: string,
+  timeout = 60000
+): Promise<Response> {
+  if (!isValidUrl(url)) {
+    throw new Error(
+      "Invalid or blocked URL. Private and local addresses are not allowed."
+    );
+  }
+
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+
+  try {
+    const fetchOptions: RequestInit = {
+      method: "POST",
+      headers: filterRequestHeaders(new Headers(headers)),
+      body,
       redirect: "follow",
       signal: controller.signal,
     };

@@ -1,7 +1,7 @@
 import { Hono, type Context } from "hono";
 import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
-import { proxyGet, filterResponseHeaders } from "@utils/proxy";
+import { proxyGet, proxyPost, filterResponseHeaders } from "@utils/proxy";
 import type { Env } from "../types/hono";
 import { fail } from "@utils/response";
 
@@ -127,6 +127,35 @@ proxyRoutes.get("/", validator, async (c) => {
     if (response.status !== 206) {
       finalHeaders.set("Cache-Control", "public, max-age=86400");
     }
+
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: finalHeaders,
+    });
+  } catch (_e: any) {
+    return handleError(c, _e);
+  }
+});
+
+/**
+ * POST /proxy?url=...&headers=...
+ * 代理 POST 请求，用于 Web 端跨域 POST（如网易云 API）
+ * Body 为原始 POST body（form-urlencoded 等）
+ */
+proxyRoutes.post("/", validator, async (c) => {
+  try {
+    const { targetUrl, customHeaders, filename } = parseProxyParams(
+      c,
+      c.req.valid("query")
+    );
+    const body = await c.req.text();
+    const response = await proxyPost(targetUrl, customHeaders, body);
+
+    const filteredHeaders = filterResponseHeaders(
+      new Headers(response.headers)
+    );
+    const finalHeaders = applyCommonHeaders(c, filteredHeaders, filename);
 
     return new Response(response.body, {
       status: response.status,
