@@ -18,6 +18,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.provider.MediaStore;
 import android.util.Base64;
+import java.io.File;
 
 import androidx.activity.result.ActivityResult;
 

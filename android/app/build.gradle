@@ -11,15 +11,22 @@ android {
         versionCode 64
         versionName "2.7.8"
     }
-
+    signingConfigs {
+        release {
+            storeFile file("../../otter-release.keystore")
+            storePassword "yunjian@861"
+            keyAlias "otter"
+            keyPassword "yunjian@861"
+        }
+    }
     buildTypes {
         debug {
             debuggable true
             minifyEnabled false
         }
         release {
+            signingConfig signingConfigs.release
             minifyEnabled true
-            shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
