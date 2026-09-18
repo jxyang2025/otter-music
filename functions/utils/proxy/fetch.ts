@@ -50,9 +50,10 @@ export async function safePost(
   const id = setTimeout(() => controller.abort(), timeout);
 
   try {
+    // headers 已由 parseProxyParams 过滤，直接使用（保留 Cookie 等）
     const fetchOptions: RequestInit = {
       method: "POST",
-      headers: filterRequestHeaders(new Headers(headers)),
+      headers,
       body,
       redirect: "follow",
       signal: controller.signal,

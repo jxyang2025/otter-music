@@ -173,12 +173,39 @@ async function crossFetch(
 
   // Web 生产环境：通过自建代理转发，绕过 CORS 限制
   // 开发环境：BASE_URL 已是 /api/netease（Vite 代理）
-  const finalUrl = import.meta.env.PROD && !IS_NATIVE ? getProxyUrl(url) : url;
+  let finalUrl = url;
+  let finalOptions = options;
+  if (import.meta.env.PROD && !IS_NATIVE) {
+    // 把自定义 headers 通过 query string 传给 proxy 路由
+    // 映射 X-Real-* 回标准头名，让 proxy 正确转发给目标
+    const proxyHeaders: Record<string, string> = {};
+    for (const [k, v] of Object.entries(options.headers)) {
+      if (k === "X-Real-Cookie") proxyHeaders["Cookie"] = v;
+      else if (k === "X-Real-UA") proxyHeaders["User-Agent"] = v;
+      else if (k === "X-Real-IP" || k === "X-Forwarded-For")
+        proxyHeaders[k] = v;
+      else if (k === "Content-Type") {
+        /* keep in fetch headers only */
+      } else proxyHeaders[k] = v;
+    }
+    const proxyHeadersStr = JSON.stringify(proxyHeaders);
+    finalUrl =
+      getProxyUrl(url) + `&headers=${encodeURIComponent(proxyHeadersStr)}`;
+    finalOptions = {
+      method: options.method,
+      body: options.body,
+      headers: {
+        "Content-Type":
+          options.headers["Content-Type"] ||
+          "application/x-www-form-urlencoded",
+      },
+    };
+  }
 
   const controller = new AbortController();
   const timer = window.setTimeout(() => controller.abort(), NETWORK_TIMEOUT_MS);
   const response = await fetch(finalUrl, {
-    ...options,
+    ...finalOptions,
     signal: controller.signal,
   }).finally(() => window.clearTimeout(timer));
   if (!response.ok) throw new Error(`Web API Error: ${response.status}`);
