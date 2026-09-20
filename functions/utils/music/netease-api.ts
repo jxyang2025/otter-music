@@ -120,10 +120,12 @@ export async function getPlaylistDetail(
     (p) => !!p && !!p.playlist && !!p.playlist.id
   );
 
-  const playlist = res?.data?.playlist;
-  if (!playlist || !Array.isArray(playlist.trackIds)) {
-    // 网易云对 Cloudflare 出口 IP 概率性返回 -462 风控，或歌单不存在：
-    // 直接返回错误对象（不再抛异常导致 500），由 handler 透传 502。
+  let playlist = res?.data?.playlist;
+  // 所有 validate 重试均失败时：从 last 响应中提取 playlist（部分重试可能成功过）
+  if (!playlist && (res as any)?._last?.data?.playlist) {
+    playlist = (res as any)._last.data.playlist;
+  }
+  if (!playlist) {
     return {
       error: "playlist not available (blocked by risk control or not found)",
       code: res?.data?.code,
@@ -131,7 +133,6 @@ export async function getPlaylistDetail(
   }
   const rawTrackIds = playlist.trackIds ?? [];
   const trackIds = rawTrackIds.map((t: any) => t.id);
-  // getTracksDetail 可能被风控抛错：即使失败也返回 playlist 基本信息（不含 tracks）
   let tracks: SongDetail[] = [];
   try {
     tracks = await getTracksDetail(trackIds, cookie);
