@@ -20,11 +20,19 @@ export async function handleNeteaseRequest(
     if (type === "playlist") {
       const id = query.id || "";
       const res = await getPlaylistDetail(id, cookie);
-      // getPlaylistDetail already returns the flattened playlist { ...playlist, tracks }
+      // getPlaylistDetail returns { ...playlist, tracks } (flattened)
+      // 如果 tracks 为空（getTracksDetail 被风控），至少包含 trackIds 让前端可展示
       if (res && (res as any).error) {
         return c.json({ ...(res as any), _debug: "new_handler_v2" }, 502);
       }
-      return c.json({ ...(res as any), _debug: "new_handler_v2" });
+      const r = res as any;
+      return c.json({
+        ...r,
+        tracks: Array.isArray(r.tracks) && r.tracks.length > 0 ? r.tracks : [],
+        trackIds: Array.isArray(r.trackIds) ? r.trackIds : [],
+        trackCount: r.trackCount ?? 0,
+        _debug: "new_handler_v2",
+      });
     }
 
     if (type === "search") {
