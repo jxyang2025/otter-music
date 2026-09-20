@@ -126,7 +126,7 @@ export async function getPlaylistDetail(
   return { ...playlist, tracks } as PlaylistDetail;
 }
 
-async function getTracksDetail(trackIds: number[], cookie: string) {
+export async function getTracksDetail(trackIds: number[], cookie: string) {
   const url = `${BASE_URL}/weapi/v3/song/detail`;
   const BATCH_SIZE = 500;
   const result: SongDetail[] = [];
