@@ -20,9 +20,10 @@ export async function handleNeteaseRequest(
 
     if (type === "playlist") {
       const id = query.id || "";
-      // getPlaylistDetail already returns { ...playlist, tracks } with tracks merged
       const res = await getPlaylistDetail(id, cookie);
-      return c.json(res);
+      // Backend returns { code, playlist: { ..., tracks } }, flatten for frontend
+      const { code, playlist } = res;
+      return c.json({ ...playlist, tracks: playlist.tracks ?? [] });
     }
 
     if (type === "search") {
