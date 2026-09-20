@@ -27,18 +27,23 @@ export class AggregateProvider implements IMusicProvider {
   ): Promise<SearchPageResult<MusicTrack>> {
     const aggregatedSources = this.getSources();
 
-    const results = await Promise.all(
-      aggregatedSources.map((s) => {
-        try {
-          return this.resolver(s).search(query, page, count, signal, intent);
-        } catch (e) {
-          logger.warn("AggregateProvider", `Search failed for ${s}`, e);
-          return Promise.resolve({ items: [], hasMore: false });
-        }
-      })
+    const settled = await Promise.allSettled(
+      aggregatedSources.map((s) =>
+        this.resolver(s).search(query, page, count, signal, intent)
+      )
     );
 
     if (signal?.aborted) return { items: [], hasMore: false };
+
+    const results: SearchPageResult<MusicTrack>[] = settled.map((r, i) => {
+      if (r.status === "fulfilled") return r.value;
+      logger.warn(
+        "AggregateProvider",
+        `Search failed for ${aggregatedSources[i]}`,
+        r.reason
+      );
+      return { items: [], hasMore: false };
+    });
 
     const merged = mergeAndSortTracks(
       results.flatMap((r) => r.items),

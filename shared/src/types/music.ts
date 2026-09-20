@@ -117,7 +117,7 @@ export interface SourceConfig {
 
 export const DEFAULT_SOURCE_CONFIGS: SourceConfig[] = [
   { source: "netease", enabled: true, visible: true },
-  { source: "_netease", enabled: false, visible: true },
+  { source: "_netease", enabled: true, visible: true },
   { source: "joox", enabled: true, visible: true },
   { source: "bilibili", enabled: true, visible: true },
   { source: "kuwo", enabled: false, visible: true },
