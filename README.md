@@ -1,4 +1,4 @@
-# Otter Music
+#水獭音乐
 
 <p align="center">
   <img width="100" alt="Otter Music icon" src="public/favicon.svg">
@@ -40,7 +40,7 @@
 | 音源              | 搜索 | 播放 | 歌词 | 歌单导入 | 备注                                                       |
 | ----------------- | :--: | :--: | :--: | :------: | ---------------------------------------------------------- |
 | 网易云音乐🌟      |  ✅  |  ✅  |  ✅  |    ✅    | GD Studio API                                              |
-| Netease           |  ✅  |  ✅  |  ✅  |    ✅    | 网易云官方，搜索建议/专辑/歌手详情                         |
+  ✅  |  ✅  |  ✅  |    ✅    |网易云官方，搜索建议/专辑/歌手详情|
 | Joox🌟            |  ✅  |  ✅  |  ✅  |    ❌    | GD Studio API                                              |
 | B站🌟             |  ✅  |  ✅  |  ✅  |    ❌    | 支持视频分P/合集、账号登录（字幕歌词）                     |
 | 酷我音乐          |  ✅  |  ✅  |  ✅  |    ✅    | GD Studio API                                              |
@@ -63,13 +63,13 @@
 
 > [!IMPORTANT]
 >
-> 在线体验：[Otter Music](https://otter-music.pages.dev/)
+> 在线体验：[Otter Music](https://music.521986.xyz/)
 >
 > 支持 PWA，可添加到主屏幕（iOS 请使用 Safari）
 
 ## 快速开始
 
-```bash
+```/bash
 npm install
 npm run dev
 ```
@@ -153,7 +153,7 @@ shared/                     # 跨端共享类型
 1. **创建项目**：Fork 本仓库，在 [Cloudflare Dashboard](https://dash.cloudflare.com/) 创建 Pages 项目。
 2. **构建配置**：
    - **Build command**: `npm run build`
-   - **Build output directory**: `dist`
+   - **构建输出目录**: `dist`
 3. **环境变量**：
    - `PASSWORD`: 设置你的管理员密码，用于管理`SYNC_KEY`（必须）
 4. **KV 绑定**：
@@ -164,12 +164,12 @@ shared/                     # 跨端共享类型
 >
 > `https://<你的域名>/admin` 路径用于管理 SYNC_KEY。
 
-## TODO
+##待办事项
 
 - 重构为仅安卓端，清理冗余 Web 适配代码（Web端使用Listen1插件即可，方便下载）
 - 嵌入 AI DJ Claudio
 
-### Not TODO
+###未完成事项
 
 - 不接入 JOOX、KUWO 等官方接口
 - 不接入 musicfree/洛雪 的插件生态（可以手动维护其音源）
