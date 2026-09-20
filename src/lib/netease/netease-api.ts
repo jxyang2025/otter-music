@@ -623,6 +623,15 @@ export const getToplist = async (
   const res = await cachedFetch<MarketPlaylist[]>(
     `netease:v2:toplist:${finalCookie.slice(-16)}`,
     async () => {
+      // Web 生产环境：走后端 /netease/toplist，避免直连 163 被拦截返回空
+      if (import.meta.env.PROD && !IS_NATIVE) {
+        const r = await fetchLocalApi<{ list: Toplist[] }>(
+          "/music-api/netease/toplist",
+          { cookie }
+        );
+        return (r.list || []).map(toMarketPlaylistFromToplist);
+      }
+      // 原生 App /开发环境：直连 music.163.com
       const r = await requestWeapi<{ list: Toplist[] }>(
         `${BASE_URL}/weapi/toplist/detail`,
         {},
@@ -865,6 +874,15 @@ export const getPlaylists = (
   cachedFetch(
     `netease:playlists:${cat}:${order}:${limit}:${offset}`,
     async () => {
+      // Web 生产环境：走后端 /netease/playlists，避免直连 163 被拦截返回空
+      if (import.meta.env.PROD && !IS_NATIVE) {
+        const res = await fetchLocalApi<{ playlists: UserPlaylist[] }>(
+          "/music-api/netease/playlists",
+          { cat, order, limit, offset, cookie }
+        );
+        return (res.playlists || []).map(toMarketPlaylistFromUserPlaylist);
+      }
+      // 原生 App /开发环境：直连 music.163.com
       const finalCookie = resolveRequestCookie(cookie);
       const res = await requestWeapi<{ playlists: UserPlaylist[] }>(
         `${BASE_URL}/weapi/playlist/list`,
