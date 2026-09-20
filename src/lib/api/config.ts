@@ -3,7 +3,7 @@ import type { ApiResponse } from "@otter-music/shared";
 
 export const IS_NATIVE = Capacitor.isNativePlatform();
 
-const getDefaultApiUrl = () => "https://otter-music.pages.dev";
+const getDefaultApiUrl = () => "https://music.521986.xyz";
 
 const STORAGE_KEY_CUSTOM_API_URL = "otter_custom_api_url";
 
