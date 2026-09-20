@@ -400,7 +400,7 @@ export const getPlaylistDetail = (playlistId: string, cookie: string = "") => {
       if (import.meta.env.PROD && !IS_NATIVE) {
         const res = await fetchLocalApi<
           { tracks: any[]; trackIds: { id: number }[] } & PlaylistDetail
-        >("/music-api?_netease&types=playlist", { id: playlistId, cookie });
+        >("/music-api?source=_netease&types=playlist", { id: playlistId, cookie });
         return res as PlaylistDetail;
       }
       // 原生 App / 开发环境：直连 music.163.com
