@@ -22,9 +22,9 @@ export async function handleNeteaseRequest(
       const res = await getPlaylistDetail(id, cookie);
       // getPlaylistDetail already returns the flattened playlist { ...playlist, tracks }
       if (res && (res as any).error) {
-        return c.json(res, 502);
+        return c.json({ ...(res as any), _debug: "new_handler_v2" }, 502);
       }
-      return c.json(res);
+      return c.json({ ...(res as any), _debug: "new_handler_v2" });
     }
 
     if (type === "search") {
