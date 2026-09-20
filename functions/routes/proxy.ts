@@ -47,15 +47,6 @@ const applyCommonHeaders = (
   );
   headers.set("Access-Control-Allow-Credentials", "true");
   headers.set("Vary", "Origin");
-  const isPost = c.req.method === "POST";
-  headers.set(
-    "Access-Control-Allow-Methods",
-    isPost ? "GET, POST, OPTIONS" : "GET, OPTIONS"
-  );
-  headers.set(
-    "Access-Control-Allow-Headers",
-    "Range, If-Range, Content-Type, Authorization, X-Real-Cookie, X-Real-UA"
-  );
   headers.set(
     "Access-Control-Expose-Headers",
     "Content-Length, Content-Range, Accept-Ranges"
