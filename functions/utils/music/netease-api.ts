@@ -146,6 +146,33 @@ async function getTracksDetail(trackIds: number[], cookie: string) {
   return result;
 }
 
+/**
+ * 网易云对数据中心 IP（如 Cloudflare Workers 出口）会随机返回 -462 风控（人机验证）。
+ * 该风控是概率性触发的，重试若干次即可大概率成功。
+ * validate 用于在 code==200 但数据为空时也触发重试。
+ */
+async function requestWeapiRetry<T = any>(
+  url: string,
+  data: any,
+  cookie: string = "",
+  validate?: (payload: any) => boolean,
+  maxAttempts: number = 4
+) {
+  let last: any = null;
+  for (let i = 0; i < maxAttempts; i++) {
+    last = await requestWeapi<T>(url, data, cookie);
+    const payload: any = (last as any)?.data;
+    const code = payload?.code;
+    const okByCode = code === undefined || code === 200 || code === 0;
+    const okByValidate = validate ? validate(payload) : true;
+    if (okByCode && okByValidate) return last as { data: T; cookie: string };
+    if (i < maxAttempts - 1) {
+      await new Promise((resolve) => setTimeout(resolve, 250 + i * 250));
+    }
+  }
+  return last as { data: T; cookie: string };
+}
+
 export async function search(
   keyword: string,
   type: number = 1,
@@ -155,12 +182,13 @@ export async function search(
 ) {
   const offset = (page - 1) * limit;
   // 使用 weapi 端点，避免 /api/search/pc 被拦截
-  const res = await requestWeapi<{ result: SearchResult; code: number }>(
+  // 注意：requestWeapi 已返回 { data: json, cookie }，直接返回即可
+  // handler 侧读取 res.data.result.songs，故不可再包一层 { data: res }
+  return requestWeapi<{ result: SearchResult; code: number }>(
     `${BASE_URL}/weapi/cloudsearch/get`,
     { s: keyword, type, offset, limit, total: true },
     cookie
   );
-  return { data: res };
 }
 
 export async function getLyric(id: string, cookie: string = "") {
@@ -187,10 +215,11 @@ export async function getRecommendPlaylists(cookie: string) {
 }
 
 export async function getToplist(cookie: string = "") {
-  return requestWeapi<{ list: Toplist[] }>(
+  return requestWeapiRetry<{ list: Toplist[] }>(
     `${BASE_URL}/weapi/toplist/detail`,
     {},
-    cookie
+    cookie,
+    (p) => Array.isArray(p?.list) && p.list.length > 0
   );
 }
 
@@ -219,10 +248,11 @@ export async function getPlaylists(
   offset: number = 0,
   cookie: string = ""
 ) {
-  return requestWeapi<{ playlists: UserPlaylist[] }>(
+  return requestWeapiRetry<{ playlists: UserPlaylist[] }>(
     `${BASE_URL}/weapi/playlist/list`,
     { cat, order, limit, offset, total: true },
-    cookie
+    cookie,
+    (p) => Array.isArray(p?.playlists) && p.playlists.length > 0
   );
 }
 
