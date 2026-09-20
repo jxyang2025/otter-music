@@ -117,7 +117,7 @@ export async function getPlaylistDetail(
     `${BASE_URL}/weapi/v3/playlist/detail`,
     data,
     cookie,
-    (p) => !!p && !!p.playlist && Array.isArray(p.playlist.trackIds)
+    (p) => !!p && !!p.playlist && !!p.playlist.id
   );
 
   const playlist = res?.data?.playlist;
@@ -129,7 +129,8 @@ export async function getPlaylistDetail(
       code: res?.data?.code,
     } as any;
   }
-  const trackIds = playlist.trackIds.map((t: any) => t.id);
+  const rawTrackIds = playlist.trackIds ?? [];
+  const trackIds = rawTrackIds.map((t: any) => t.id);
   // getTracksDetail 可能被风控抛错：即使失败也返回 playlist 基本信息（不含 tracks）
   let tracks: SongDetail[] = [];
   try {
