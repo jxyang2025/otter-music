@@ -154,34 +154,13 @@ export async function search(
   cookie: string = ""
 ) {
   const offset = (page - 1) * limit;
-  const fakeIp = getRandomDomesticIp();
-
-  const headers: Record<string, string> = {
-    "Content-Type": "application/x-www-form-urlencoded",
-    "User-Agent": PC_USER_AGENT,
-    Referer: BASE_URL,
-    Origin: BASE_URL,
-    "X-Real-IP": fakeIp,
-    "X-Forwarded-For": fakeIp,
-    Cookie: buildCookie(cookie),
-  };
-
-  const params = new URLSearchParams({
-    s: keyword,
-    type: String(type),
-    offset: String(offset),
-    limit: String(limit),
-  });
-  const response = await fetch(`${BASE_URL}/api/search/pc`, {
-    method: "POST",
-    headers,
-    body: params.toString(),
-  });
-
-  const json = await response.json();
-  if (!response.ok || json.code !== 200)
-    throw new Error(`NetEase Search API Error: ${response.status}`);
-  return { data: json as { result: SearchResult; code: number } };
+  // 使用 weapi 端点，避免 /api/search/pc 被拦截
+  const res = await requestWeapi<{ result: SearchResult; code: number }>(
+    `${BASE_URL}/weapi/cloudsearch/get`,
+    { s: keyword, type, offset, limit, total: true },
+    cookie
+  );
+  return { data: res };
 }
 
 export async function getLyric(id: string, cookie: string = "") {
