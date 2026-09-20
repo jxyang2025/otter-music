@@ -63,6 +63,50 @@ musicRoutes.get("/", async (c) => {
   }
 });
 
+// POST handler for /music-api (needed by fetchLocalApi which uses POST when body is present)
+musicRoutes.post("/", async (c) => {
+  const query = c.req.query();
+  let body: Record<string, string> = {};
+  try {
+    body = await c.req.json();
+  } catch (e) { console.error("JSON parse error:", e); }
+
+  // Backend Adapter: Intercept NetEase requests
+  if (query.source === "_netease") {
+    // Merge body into query so handleNeteaseRequest can read id/cookie from body
+    const merged = { ...query, ...Object.fromEntries(Object.entries(body).filter(([, v]) => v !== undefined)) };
+    return handleNeteaseRequest(c, merged);
+  }
+
+  // For other POST requests, read body and proxy
+  try {
+    const body = await c.req.json();
+    const searchParams = new URLSearchParams({ ...query, ...Object.fromEntries(Object.entries(body).filter(([, v]) => v !== undefined)) });
+    const targetUrl = `${API_BASE}?${searchParams.toString()}`;
+
+    const res = await fetch(targetUrl, {
+      method: "GET",
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      },
+    });
+
+    if (!res.ok) {
+      return c.json(
+        { error: "Upstream request failed", status: res.status },
+        res.status as any
+      );
+    }
+
+    const data = await res.json();
+    return c.json(data);
+  } catch (e: any) {
+    console.error("Music proxy POST error:", e);
+    return c.json({ error: e.message }, 500);
+  }
+});
+
 musicRoutes.route("/netease", neteaseRoutes);
 musicRoutes.route("/qqmusic", qqmusicRoutes);
 musicRoutes.route("/kugou", kugouRoutes);
