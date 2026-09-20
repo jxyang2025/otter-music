@@ -94,6 +94,8 @@ export function PlaylistMarket() {
         const isToplist = category === "toplist";
         const cacheKey = `market-playlist:v2:${category || "all"}:${isToplist ? 0 : offset}`;
 
+        // 空结果不写入长缓存（网易云 /weapi/playlist/list 对"全部"分类概率性 -462，
+        // 若首次请求恰好拿到空数据，空数组会写盘并锁死 24h，导致"全部"永远为空）
         const res = await cachedFetch<MarketPlaylist[]>(
           cacheKey,
           () =>
@@ -102,6 +104,33 @@ export function PlaylistMarket() {
               : getPlaylists(category || "全部", "hot", PAGE_SIZE, offset, ""),
           1 * 24 * 60 * 60 * 1000
         );
+
+        // 空数组命中缓存时删掉该条缓存，下次重新拉取（避免 -462 空结果锁死）
+        if (Array.isArray(res) && res.length === 0) {
+          try {
+            const cache = await caches.open("otter-cache-v1");
+            await cache.delete(
+              `https://cache.local/${encodeURIComponent(cacheKey)}`
+            );
+          } catch (_) {
+            /* ignore */
+          }
+          // 重新拉取一次
+          const fresh = isToplist
+            ? await getToplist("")
+            : await getPlaylists(
+                category || "全部",
+                "hot",
+                PAGE_SIZE,
+                offset,
+                ""
+              );
+          if (!fresh || fresh.length === 0) return null; // 重拉仍空，放行（不写缓存）
+          return {
+            items: fresh,
+            hasMore: isToplist ? false : fresh.length >= PAGE_SIZE,
+          };
+        }
 
         if (!res) return null;
         return {
