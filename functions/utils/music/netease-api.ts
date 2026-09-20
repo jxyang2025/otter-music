@@ -182,12 +182,13 @@ export async function search(
 ) {
   const offset = (page - 1) * limit;
   // 使用 weapi 端点，避免 /api/search/pc 被拦截
-  // 注意：requestWeapi 已返回 { data: json, cookie }，直接返回即可
-  // handler 侧读取 res.data.result.songs，故不可再包一层 { data: res }
-  return requestWeapi<{ result: SearchResult; code: number }>(
-    `${BASE_URL}/weapi/cloudsearch/get`,
+  // 注意：/weapi/cloudsearch/get 已失效（返回 code 404），可用的是 /weapi/search/get
+  // requestWeapi 已返回 { data: json, cookie }，handler 侧读取 res.data.result.songs，故不可再包一层
+  return requestWeapiRetry<{ result: SearchResult; code: number }>(
+    `${BASE_URL}/weapi/search/get`,
     { s: keyword, type, offset, limit, total: true },
-    cookie
+    cookie,
+    (p) => Array.isArray(p?.result?.songs)
   );
 }
 
