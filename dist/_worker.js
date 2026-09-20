@@ -38315,8 +38315,7 @@ function convertMiguV3SearchSongToMusicTrack(song) {
     name: song.songName || "\u672A\u77E5\u6B4C\u66F2",
     artist: (song.singerList || []).map((s) => s.name || "").filter(Boolean),
     album: song.album || "",
-    // 优先使用 img3 > img2 > img1，获取最大可用封面
-    pic_id: normalizeMiguImageUrl(song.img3 || song.img2 || song.img1),
+    // 优先使用 img3 > img2 > img1，获取最大可用封�?    pic_id: normalizeMiguImageUrl(song.img3 || song.img2 || song.img1),
     url_id: encodedId,
     lyric_id: forceHttps(song.ext?.lrcUrl || ""),
     source: "migu",
@@ -38488,9 +38487,8 @@ function parseBilibiliSeasonsArchivesList(response) {
       name: rawMeta.name,
       cover: normalizeResourceUrl(rawMeta.cover || ""),
       description: rawMeta.description,
-      // seasons_archives_list 返回的 meta 中没有 UP 主名称，只有 mid
-      // 需要通过额外的 API 调用获取 UP 主名称
-      creator: rawMeta.mid !== void 0 ? { mid: rawMeta.mid } : void 0,
+      // seasons_archives_list 返回�?meta 中没�?UP 主名称，只有 mid
+      // 需要通过额外�?API 调用获取 UP 主名�?      creator: rawMeta.mid !== void 0 ? { mid: rawMeta.mid } : void 0,
       total: rawMeta.total
     } : null,
     archives: response.data?.archives ?? [],
@@ -40511,12 +40509,10 @@ var init_cache = __esm({
     CACHE_CONFIG = {
       file: {
         maxAge: 86400 * 7
-        // 7 天
-      },
+        // 7 �?      },
       thumb: {
         maxAge: 86400 * 1
-        // 1 天
-      },
+        // 1 �?      },
       api: {
         maxAge: 3600
         // 1 小时
@@ -42996,7 +42992,9 @@ var init_app = __esm({
     init_dist();
     app2 = new Hono2();
     app2.use("*", async (c, next) => {
-      console.log(`[Hono] ${c.req.method} ${c.req.path}`);
+      console.log(`[Hono] ${
+    if (c.req.path === '/test-new-handler') return c.json({ok: true, handler: 'new', ts: Date.now()});
+    c.req.method} ${c.req.path}`);
       await next();
     });
     app2.use("*", corsMiddleware);
