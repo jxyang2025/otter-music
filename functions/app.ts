@@ -24,6 +24,23 @@ app.use("*", corsMiddleware);
 app.get("/health", (c) => c.text("OK"));
 app.on("HEAD", "/health", (c) => c.body(null, 200));
 
+// 测试端点：验证 netease-handler 代码是否在运行
+app.get("/test-handler", (c) => {
+  return c.json({
+    ok: true,
+    handler: "new-code-v3",
+    time: new Date().toISOString(),
+  });
+});
+app.post("/test-handler", (c) => {
+  return c.json({
+    ok: true,
+    method: "POST",
+    handler: "new-code-v3",
+    time: new Date().toISOString(),
+  });
+});
+
 // Routes
 app.route("/auth", authRoutes);
 
