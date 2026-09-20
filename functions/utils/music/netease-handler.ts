@@ -20,12 +20,9 @@ export async function handleNeteaseRequest(
 
     if (type === "playlist") {
       const id = query.id || "";
+      // getPlaylistDetail already returns { ...playlist, tracks } with tracks merged
       const res = await getPlaylistDetail(id, cookie);
-      const tracks = await getTracksDetail(
-        res.trackIds.map((t: any) => t.id),
-        cookie
-      );
-      return c.json({ ...res, tracks });
+      return c.json(res);
     }
 
     if (type === "search") {
