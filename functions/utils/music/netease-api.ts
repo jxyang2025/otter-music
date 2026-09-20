@@ -113,13 +113,22 @@ export async function getPlaylistDetail(
     n: 1000,
     csrf_token: "",
   };
-  const res = await requestWeapi<{ playlist: any }>(
+  const res = await requestWeapiRetry<{ playlist: any; code?: number }>(
     `${BASE_URL}/weapi/v3/playlist/detail`,
     data,
-    cookie
+    cookie,
+    (p) => !!p && !!p.playlist && Array.isArray(p.playlist.trackIds)
   );
 
-  const playlist = res.data.playlist;
+  const playlist = res?.data?.playlist;
+  if (!playlist || !Array.isArray(playlist.trackIds)) {
+    // 网易云对 Cloudflare 出口 IP 概率性返回 -462 风控，或歌单不存在：
+    // 直接返回错误对象（不再抛异常导致 500），由 handler 透传 502。
+    return {
+      error: "playlist not available (blocked by risk control or not found)",
+      code: res?.data?.code,
+    } as any;
+  }
   const trackIds = playlist.trackIds.map((t: any) => t.id);
   const tracks = await getTracksDetail(trackIds, cookie);
 

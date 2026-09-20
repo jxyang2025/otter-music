@@ -20,9 +20,11 @@ export async function handleNeteaseRequest(
     if (type === "playlist") {
       const id = query.id || "";
       const res = await getPlaylistDetail(id, cookie);
-      // Backend returns { code, playlist: { ..., tracks } }, flatten for frontend
-      const { playlist } = res;
-      return c.json({ ...playlist, tracks: playlist.tracks ?? [] });
+      // getPlaylistDetail already returns the flattened playlist { ...playlist, tracks }
+      if (res && (res as any).error) {
+        return c.json(res, 502);
+      }
+      return c.json(res);
     }
 
     if (type === "search") {
