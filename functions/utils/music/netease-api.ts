@@ -130,9 +130,14 @@ export async function getPlaylistDetail(
     } as any;
   }
   const trackIds = playlist.trackIds.map((t: any) => t.id);
-  const tracks = await getTracksDetail(trackIds, cookie);
-
-  return { ...playlist, tracks } as PlaylistDetail;
+  // getTracksDetail 可能被风控抛错：即使失败也返回 playlist 基本信息（不含 tracks）
+  let tracks: SongDetail[] = [];
+  try {
+    tracks = await getTracksDetail(trackIds, cookie);
+  } catch (e) {
+    console.error("[getPlaylistDetail] getTracksDetail failed:", e);
+  }
+  return { ...playlist, tracks, trackIds } as PlaylistDetail;
 }
 
 export async function getTracksDetail(trackIds: number[], cookie: string) {
