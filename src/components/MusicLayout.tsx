@@ -11,46 +11,47 @@ interface MusicLayoutProps {
   isTab?: boolean;
 }
 
-
-export function MusicLayout({ children, player, tabBar, header, hidePlayer, className, isTab = true }: MusicLayoutProps) {
+export function MusicLayout({
+  children,
+  player,
+  tabBar,
+  header,
+  hidePlayer,
+  className,
+  isTab = true,
+}: MusicLayoutProps) {
   return (
-    <div className={cn(
-      "relative flex flex-col h-dvh overflow-hidden bg-background pt-safe",
-      isTab && "pt-11",
-      className
-    )}>
-      {/* Header */}
-      {header && (
-        <div className="shrink-0 px-5 pb-3">
-          {header}
-        </div>
+    <div
+      className={cn(
+        "relative flex flex-col h-dvh overflow-hidden bg-background pt-safe",
+        isTab && "pt-[var(--tab-bar-top-offset)]",
+        className
       )}
+    >
+      {/* Header */}
+      {header && <div className="shrink-0 px-5 pb-3">{header}</div>}
 
       {/* Main Content */}
       <div className="flex-1 min-h-0 relative">
-        <div className={cn(
-          "h-full overflow-auto scrollbar-hide",
-        )}>
+        <div className={cn("h-full overflow-auto scrollbar-hide")}>
           {children}
         </div>
       </div>
 
       {/* Now Playing Bar (Floating Island) */}
       {!hidePlayer && (
-        <div className={cn(
-          "flex-none z-50 absolute left-0 right-0 transition-all duration-300",
-          isTab ? "bottom-(--now-playing-safe-height)" : "bottom-0"
-        )}>
+        <div
+          className={cn(
+            "flex-none z-50 absolute left-0 right-0 transition-all duration-300",
+            isTab ? "bottom-(--now-playing-safe-height)" : "bottom-0"
+          )}
+        >
           {player}
         </div>
       )}
 
       {/* Tab Bar */}
-      {isTab && (
-        <div className="flex-none z-40">
-          {tabBar}
-        </div>
-      )}
+      {isTab && <div className="flex-none z-40">{tabBar}</div>}
     </div>
   );
 }

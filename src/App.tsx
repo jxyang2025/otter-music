@@ -25,10 +25,13 @@ export default function App() {
   }, [syncKey]);
 
   useEffect(() => {
-    // 启动时静默检查更新（用户关闭更新提醒后跳过）
-    if (useAppStore.getState().enableUpdateNotify) {
-      useAppStore.getState().checkUpdate(true);
-    }
+    // 启动时静默检查更新（用户关闭更新提醒后跳过，延迟 2s 避免阻塞首屏）
+    const timer = setTimeout(() => {
+      if (useAppStore.getState().enableUpdateNotify) {
+        useAppStore.getState().checkUpdate(true);
+      }
+    }, 2000);
+
     // 初始化下载记录
     useDownloadStore.getState().init();
 
@@ -45,6 +48,7 @@ export default function App() {
     const handleBeforeUnload = () => revokeAll();
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => {
+      clearTimeout(timer);
       cancelPreload();
       window.removeEventListener("beforeunload", handleBeforeUnload);
       revokeAll();

@@ -120,6 +120,12 @@
     --safe-area-inset-right,
     env(safe-area-inset-right, 0px)
   );
+  /*
+   * 顶部 tab 页额外下移量。原实现是硬编码的 pt-11（44px），在状态栏高于 44px 的
+   * ROM（如小米）上会让搜索框被状态栏压住。改为「安全区 > 0 用安全区，否则回退 44px」，
+   * 由 max() 一次表达，无需 JS 判断是否存在安全区。
+   */
+  --tab-bar-top-offset: max(2.75rem, var(--safe-area-top));
   --tab-bar-base-height: 56px;
   --tab-bar-safe-height: calc(
     var(--tab-bar-base-height) + var(--safe-area-bottom)
